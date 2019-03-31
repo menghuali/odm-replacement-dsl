@@ -1,0 +1,132 @@
+grammar poc.rules.RuleLanguage with org.eclipse.xtext.common.Terminals
+
+generate ruleLanguage "http://www.rules.poc/RuleLanguage"
+
+RuleLanguage:
+	(elements+=Element)*;
+
+Element:
+	BookingPhrase | FlightPhrase | TripPhrase | GuestPhrase | NotificationPhrase | Action | NotificationAction |
+	FlightAction | BookingAction | GuestAction | TripAction | RulePackage;
+
+RulePackage:
+	'package' name=QualifiedName '{'
+		(elements+=(Rule | DecisionTable))*
+	'}';
+
+QualifiedName:
+	ID ('.' ID)*;
+
+BookingPhrase:
+	'$booking' name=ID;
+
+FlightPhrase:
+	'$flight' name=ID;
+
+TripPhrase:
+	'$trip' name=ID;
+
+GuestPhrase:
+	'$guest' name=ID;
+
+NotificationPhrase:
+	'$notification' name=ID;
+
+NotificationAction:
+	'#notification' name=ID;
+
+FlightAction:
+	'#flight' name=ID;
+
+BookingAction:
+	'#booking' name=ID;
+
+GuestAction:
+	'#guest' name=ID;
+
+TripAction:
+	'#trip' name=ID;
+
+Rule:
+	'Rule' name=ID (':' description=STRING)?
+	('When' (conditions+=ECondition)*)?
+	'Then' (actions+=Action)*
+	('Else' (actions+=Action)*)?;
+
+ECondition:
+	('And' | 'Or')? '('? ('Not')? Condition ')'?;
+
+Condition:
+	SimpleCondition /*| AllTrue | AnyTrue | NoneTrue */;
+
+	/*
+ NoneTrue:
+	{NoneTrue} 'none_following_are_true:'
+	('-' conditions+=SimpleCondition)* ',';
+
+AnyTrue:
+	{AnyTrue} 'any_following_is_true:'
+	('-' conditions+=SimpleCondition)* ',';
+
+AllTrue:
+	{AllTrueCondition} 'all_following_are_true:'
+	('-' conditions+=SimpleCondition)* ',';
+*/
+SimpleCondition:
+	FlightCondition | BookingCondition | GuestCondition | TripCondition | NotificationCondition;
+
+Operator:
+	('==' | '<=' | '>=' | 'in' | 'contain');
+
+TripCondition:
+	'trip' method+=[TripPhrase] (Operator (VALUE | VALUES))? (('and' | 'or') method+=[TripPhrase] (Operator (VALUE |
+	VALUES))?)*;
+
+GuestCondition:
+	'guest' method+=[GuestPhrase] (Operator (VALUE | VALUES))? (('and' | 'or') method+=[GuestPhrase] (Operator (VALUE |
+	VALUES))?)*;
+
+BookingCondition:
+	'booking' method+=[BookingPhrase] (Operator (VALUE | VALUES))? (('and' | 'or') method+=[BookingPhrase] (Operator
+	(VALUE | VALUES))?)*;
+
+FlightCondition:
+	'flight' method+=[FlightPhrase] (Operator (VALUE | VALUES))? (('and' | 'or') method+=[FlightPhrase] (Operator (VALUE |
+	VALUES))?)*;
+
+NotificationCondition:
+	'notification' method+=[NotificationPhrase] (Operator (VALUE | VALUES))? (('and' | 'or') method+=[NotificationPhrase]
+	(Operator (VALUE |
+	VALUES))?)*;
+
+Action:
+	ENotificationAction | EFlightAction | EBookingAction | EGuestAction | ETripAction;
+
+ENotificationAction:
+	'notification' method+=[NotificationAction] (param+=(VALUE | VALUES))? ('and' method+=[NotificationAction]
+	(param+=(VALUE | VALUES))?)*;
+
+EFlightAction:
+	'flight' method+=[FlightAction] (param+=(VALUE | VALUES))? ('and' method+=[FlightAction] (param+=(VALUE | VALUES))?)*;
+
+EBookingAction:
+	'booking' method+=[BookingAction] (param+=(VALUE | VALUES))? ('and' method+=[BookingAction] (param+=(VALUE |
+	VALUES))?)*;
+
+EGuestAction:
+	'guest' method+=[GuestAction] (param+=(VALUE | VALUES))? ('and' method+=[GuestAction] (param+=(VALUE | VALUES))?)*;
+
+ETripAction:
+	'trip' method+=[TripAction] (param+=(VALUE | VALUES))? ('and' method+=[TripAction] (param+=(VALUE | VALUES))?)*;
+
+VALUES:
+	'(' VALUE (',' VALUE)* ')';
+
+VALUE:
+	INT | STRING | 'true' | 'false';
+
+DecisionTable:
+	'Table' name=ID (':' description=STRING)?
+	'|' conditions+=SimpleCondition ('|' conditions+=SimpleCondition)* '|' actions+=Action '|' (actions+=Action '|')*
+	('|' cells+=VALUE '|' (cells+=VALUE '|')*)*;
+	
